@@ -1,5 +1,7 @@
 /*
-!js/plugin/
+/js/*
+!js/
+!js/plugins/
 !.gitignore
 !.gitattribute
 !LICENSE
