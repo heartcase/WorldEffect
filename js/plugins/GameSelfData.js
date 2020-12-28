@@ -45,7 +45,7 @@
   };
 }
 
-// SelfData API
+// 事件脚本 API
 {
   // 获取DataKey
   const getDataKey = (mapId, eventId, key) => `${mapId},${eventId},${key}`;
@@ -53,17 +53,14 @@
 
   // 获取Event对应的所有DataKey
   const getKeysHelper = (keyPattern) =>
-    Object.keys($gameSelfData._data).filter(
-      (dataKey) => dataKey.slice(0, keyPattern.length) === keyPattern,
-    );
-
-  const getDataKeys = (mapId, eventId) => getKeysHelper(`${mapId},${eventId},`);
-  const getSharedDataKeys = (sharedId) => getKeysHelper(`$${sharedId},`);
+    Object.keys($gameSelfData._data)
+      .filter((dataKey) => dataKey.slice(0, keyPattern.length) === keyPattern)
+      .map((dataKey) => dataKey.slice(keyPattern.length));
 
   // 判断是否是SharedDataEvent (<SharedId: id>)
   // 判断是否自身拥有getDataKey方法
   // 否则使用默认getDataKey方法
-  const getDataKeyFromEvent = (event, key) => {
+  const getDataKeyFromEvent = (event, key = '') => {
     if (event.event().meta.SharedId !== undefined) {
       const sharedId = event.event().meta.SharedId;
       return getSharedDataKey(sharedId, key);
@@ -90,10 +87,16 @@
     return $gameSelfData.value(dataKey);
   };
 
+  // 面向事件脚本的getKeys方法
+  const getKeys = (interpreter) => {
+    const event = $gameMap.event(interpreter._eventId);
+    const dataKey = getDataKeyFromEvent(event);
+    return getKeysHelper(dataKey);
+  };
+
   window.SelfData = {
-    getDataKeys,
-    getSharedDataKeys,
     setValue,
     getValue,
+    getKeys,
   };
 }
