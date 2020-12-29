@@ -67,13 +67,9 @@
 
         var [n400, n] = _divmod(n, _DI400Y);
         var year = n400 * 400 + 1;
-
         var [n100, n] = _divmod(n, _DI100Y);
-
         var [n4, n] = _divmod(n, _DI4Y);
-
         var [n1, n] = _divmod(n, 365);
-
         year += n100 * 100 + n4 * 4 + n1;
 
         if (n1 == 4 || n100 == 4) {
@@ -88,6 +84,7 @@
             preceding -= _DAYS_IN_MONTH[month] + (month == 2 && leapyear);
         }
         n -= preceding;
+        
         return [year, month, n+1];
     };
 
@@ -146,7 +143,7 @@
   */
 
 
-  const DAYINWEEK = 3; // Y1M1D1 的星期(1-7) (from 插件参数)
+  const DAY1OFWEEK = 3; // Y1M1D1 的星期(1-7) (from 插件参数)
 
   const getTime = () => frames;
   
@@ -156,7 +153,7 @@
   const getMinutes = () => Math.floor(frames / 3600) % 60;
   const getHours   = () => Math.floor(frames / 216000) % 24;
 
-  const getDay     = () => (Math.floor(frames / 5184000) + DAYINWEEK - 1) % 7 + 1; // 星期(1-7)
+  const getDay     = () => (Math.floor(frames / 5184000) + DAY1OFWEEK - 1) % 7 + 1; // 星期(1-7)
 
   const getDate     = () => ord2ymd(Math.floor(frames / 5184000) + 1)[2];
   const getMonth    = () => ord2ymd(Math.floor(frames / 5184000) + 1)[1];
@@ -193,11 +190,18 @@
     return `${y}-${M}-${d}`;
   };
 
+
+  // 判断时间是否流逝
+  Game_Map.prototype.isTimePass = function () {
+    return !this._interpreter.isRunning();
+    // TODO : 判断标签<TimeFly> 等
+  };
+
   // overwrite
   const update = Game_Map.prototype.update;
   Game_Map.prototype.update = function (sceneActive) {
     update.call(this, sceneActive);
-    if (!this._interpreter.isRunning()) tick();
+    this.isTimePass() && tick();
   };
 
   const createGameObjects = DataManager.createGameObjects;
@@ -226,6 +230,7 @@
     tick,
     display,
     displayTime,
+    displayDate,
 
     getTime,
     getMilliseconds,
@@ -235,6 +240,7 @@
     getDay,
     getDate,
     getMonth,
+    getYear,
     getFullYear,
 
     ymd2ord, 
