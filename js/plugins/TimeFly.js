@@ -60,11 +60,10 @@
   const display = () => frames;
 
   const displayTime = () => {
-    return (new RM_Timestamp(frames)).displayTime();
-  };
-
-  const displayDate = () => {
-    return (new RM_Timestamp(frames)).displayDate();
+    const s = getSeconds().toString().padStart(2, 0);
+    const m = getMinutes().toString().padStart(2, 0);
+    const H = getHours().toString().padStart(2, 0);
+    return `${H}:${m}:${s}`;
   };
 
   // 判断时间是否流逝
@@ -104,13 +103,8 @@
 
   window.TimeFly = {
     tick,
-
     display,
     displayTime,
-    displayDate,
-
-    //ymd2ord,
-    //ord2ymd,
 
     setTimeRatio,
     getTimeRatio,
