@@ -27,7 +27,7 @@
     for (const each of overflows) {
       const { periodSize, handlers } = each;
       const periods = Math.floor(deltaFrames / periodSize);
-      const overflow = lastFrames % periodSize >= frames % periodSize ? 1 : 0;
+      const overflow = lastFrames % periodSize > frames % periodSize ? 1 : 0;
       if (periods + overflow > 0) {
         handlers.forEach((handler) => {
           handler(periods + overflow);
