@@ -19,15 +19,17 @@
   const overflows = [
     {
       periodSize: 60 * 60 * 60,
+      triggerPos: 0 * 60 * 60, 
       handlers: everyHourEvents,
     },
   ];
   // 判断是否触发周期事件
   const checkPeriod = (deltaFrames) => {
     for (const each of overflows) {
-      const { periodSize, handlers } = each;
+      const { periodSize, triggerPos, handlers } = each;
+      const offset = periodSize - triggerPos % periodSize;
       const periods = Math.floor(deltaFrames / periodSize);
-      const overflow = lastFrames % periodSize >= frames % periodSize ? 1 : 0;
+      const overflow = (lastFrames+offset) % periodSize > (frames+offset) % periodSize ? 1 : 0;
       if (periods + overflow > 0) {
         handlers.forEach((handler) => {
           handler(periods + overflow);
