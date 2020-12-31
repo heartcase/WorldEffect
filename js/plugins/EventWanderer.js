@@ -73,8 +73,31 @@
   };
 
   // TODO: 低优先级, 独立开关支持, 从key的参数列表里判断event类型
-  // Game_SelfSwitches.prototype.value(key)
-  // Game_SelfSwitches.prototype.setValue(key)
+  // 判断key[1]是否是Game_DynamicEvent，此处用的方法是instanceof
+  
+  const Game_SelfSwitches_value = Game_SelfSwitches.prototype.value;
+  Game_SelfSwitches.prototype.value = function(key) {
+    if (key[0] == $gameMap.mapId() && $gameMap.event(key[1]) instanceof Game_DynamicEvent) {
+      var key2 = [eventMapId, $gameMap.event(key[1]).templateId, key[2]];
+      return !!this._data[key2];
+    }
+    return Game_SelfSwitches_value.apply(this, arguments);
+  };
+  
+  const Game_SelfSwitches_setValue = Game_SelfSwitches.prototype.setValue;
+  Game_SelfSwitches.prototype.setValue = function(key, value) {
+    if (key[0] == $gameMap.mapId() && $gameMap.event(key[1]) instanceof Game_DynamicEvent) {
+      var key2 = [eventMapId, $gameMap.event(key[1]).templateId, key[2]];
+      if (value) {
+          this._data[key2] = true;
+      } else {
+          delete this._data[key2];
+      }
+      this.onChange();
+    } else {
+      Game_SelfSwitches_setValue.apply(this, arguments);
+    }
+  };
 
   // Usage
   // createDynamicEventData('少年', 1, 1, { pos: [1, 1] });
