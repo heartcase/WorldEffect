@@ -1,10 +1,19 @@
-window.PageSwitch = {};
-
+/*:
+ * @target MZ
+ */
 {
+  // 正则表达式映射
   const casePatterns = {};
+  // 判断函数映射
   const caseHandlers = {};
 
-  // core
+  // 判断状态
+  const checkCase = (caseName, args) => {
+    const handler = caseHandlers[caseName];
+    return handler(...args);
+  };
+
+  // 从事件页首部注释中匹配正则
   const checkCases = (event, page) => {
     const list = page.list;
     for (const each of list) {
@@ -15,6 +24,7 @@ window.PageSwitch = {};
           const handler = caseHandlers[key];
           const match = comment.match(pattern);
           if (match) {
+            // 默认PageSwitch
             const [_, ...matches] = match;
             const result = handler(event, ...matches);
             if (!result) {
@@ -29,8 +39,12 @@ window.PageSwitch = {};
     return true;
   };
 
+  // 注册 SwitchCase
+  // 只注册handler: registerCase('方法名', null, handler)
   const registerCase = (key, pattern, handler) => {
-    casePatterns[key] = pattern;
+    if (pattern) {
+      casePatterns[key] = pattern;
+    }
     caseHandlers[key] = handler;
   };
 
@@ -40,35 +54,7 @@ window.PageSwitch = {};
     const result = meetsConditions.call(this, page);
     return result && checkCases(this, page);
   };
-  window.PageSwitch.registerCase = registerCase;
-}
 
-{
-  window.PageSwitch.registerCase(
-    'SelfDataHasSet',
-    /CASE: SelfData ([^\s]+) has set/,
-    (event, key) =>
-      $gameSelfData.value([event._mapId, event._eventId, key]) !== undefined,
-  );
-
-  window.PageSwitch.registerCase(
-    'SelfDataHasNotSet',
-    /CASE: SelfData ([^\s]+) has not set/,
-    (event, key) =>
-      $gameSelfData.value([event._mapId, event._eventId, key]) === undefined,
-  );
-
-  window.PageSwitch.registerCase(
-    'SelfDataIs',
-    /CASE: SelfData ([^\s]+) is ([^\s]+)/,
-    (event, key, value) =>
-      $gameSelfData.value([event._mapId, event._eventId, key]) === value,
-  );
-
-  window.PageSwitch.registerCase(
-    'SelfDataIsNot',
-    /CASE: SelfData ([^\s]+) is not ([^\s]+)/,
-    (event, key, value) =>
-      $gameSelfData.value([event._mapId, event._eventId, key]) !== value,
-  );
+  window.PageSwitch = { registerCase, checkCase };
+  window.$caseHandlers = caseHandlers;
 }
