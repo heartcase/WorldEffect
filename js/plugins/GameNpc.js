@@ -3,7 +3,26 @@ class NPCPattern {
   behaviorName = '';
   dialogueName = '';
   actionName = '';
-  evaluate() {}
+
+  constructor(behaviorName, dialogueName) {
+    this.behaviorName = behaviorName;
+    this.dialogueName = dialogueName;
+  }
+
+  addCondition(caseName, args) {
+    this.conditions.push({
+      caseName,
+      args,
+    });
+    return this;
+  }
+
+  evaluate(event) {
+    return this.conditions.every((condition) => {
+      const { caseName, args } = condition;
+      return window.PageSwitch.checkCase(caseName, event, args);
+    });
+  }
 }
 
 class MapGraph {
@@ -30,10 +49,33 @@ class PathNode {
 }
 
 class Game_NPCEvent extends Game_Event {
-  static loadNewEvent(name) {}
+  static loadNewEvent(data) {
+    const mapId = $gameMap._eventId;
+    const eventId = $gameMap._events.length;
+    const event = new Game_NPCEvent(mapId, eventId, data);
+    $gameMap._events[eventId] = event;
+    return event;
+  }
+  data = null;
+  get pos() {}
+
+  constructor(mapId, eventId, data) {
+    super(mapId, eventId, data);
+  }
+  initialize(mapId, eventId, data) {
+    super.initialize(mapId, eventId);
+    this.templateId = $dataEventMap.events.find(
+      (eventData) => eventData && eventData.meta.npcName === data.name,
+    );
+  }
+  unloadFromScene() {}
+  event() {
+    return window.$dataEventMap.events[this.templateId];
+  }
 }
 
 class Game_NPC {
+  name = '';
   offSceneCounter = 0;
   patterns = [];
   routine = [];
@@ -110,7 +152,7 @@ class Game_NPC {
 
     // NPC登场
     if (this.mapId === $gameMap.mapId) {
-      const event = Game_NPCEvent.loadNewEvent(this.name);
+      const event = Game_NPCEvent.loadNewEvent(this);
       this.eventId = event._eventId;
     }
   }
@@ -157,14 +199,17 @@ class Game_NPC {
     this.event.moveForward();
 
     // 记录NPC位置
-    this.pos = dest.pos;
+    this.pos = this.event.pos;
+  }
+
+  // 增加 NPC 行为模式
+  addPattern(pattern) {
+    this.patterns.push(pattern);
   }
 
   // NPC行为模式更新
   patternUpdate() {
-    const newPattern = this.patterns.find((each) =>
-      each.conditions.every((condition) => condition.evaluate()),
-    );
+    const newPattern = this.patterns.find((each) => each.evaluate());
     const {
       behaviorName,
       dialogueName,
@@ -172,14 +217,9 @@ class Game_NPC {
       routine,
       patrol,
     } = newPattern;
-    if (this.behaviorName === behaviorName) {
+    if (this.behaviorName !== behaviorName) {
       // 计算到线路起始点的路径
-      let dest;
-      if (!this.routineIsEmpty()) {
-        dest = routine[0];
-      } else {
-        dest = patrol[0];
-      }
+      const dest = this.routineIsEmpty() ? patrol[0] : routine[0];
       const initRoutine = $gameMapGraph.findRoutine(this.pos, dest);
       this.routine = initRoutine.concat(routine);
       this.patrol = patrol.slice();
@@ -189,3 +229,6 @@ class Game_NPC {
     $gameMap.requestRefresh();
   }
 }
+
+window.Game_NPC = Game_NPC;
+window.NPCPattern = NPCPattern;
