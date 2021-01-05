@@ -3,10 +3,26 @@ class NPCPattern {
   behaviorName = '';
   dialogueName = '';
   actionName = '';
+  routine = [];
+  patrol = [];
+  d = 0;
 
-  constructor(behaviorName, dialogueName) {
+  constructor(behaviorName, dialogueName, d = 0) {
     this.behaviorName = behaviorName;
     this.dialogueName = dialogueName;
+    this.d = d;
+  }
+
+  addRoutineNode(nodeName) {
+    const node = $mapGraph.getPathNode(nodeName);
+    this.routine.push(node);
+    return this;
+  }
+
+  addPatrolNode(nodeName) {
+    const node = $mapGraph.getPathNode(nodeName);
+    this.patrol.push(node);
+    return this;
   }
 
   addCondition(caseName, args) {
@@ -22,29 +38,6 @@ class NPCPattern {
       const { caseName, args } = condition;
       return window.PageSwitch.checkCase(caseName, event, args);
     });
-  }
-}
-
-class MapGraph {
-  nodes = [];
-  findRoutine(pos, dest) {}
-}
-window.$gameMapGraph = new MapGraph();
-
-class PathNode {
-  pos = [-1, -1, -1, -1];
-  cost = 0;
-  get mapId() {
-    return this.pos[0];
-  }
-  get x() {
-    return this.pos[1];
-  }
-  get y() {
-    return this.pos[2];
-  }
-  get d() {
-    return this.pos[3];
   }
 }
 
@@ -80,10 +73,12 @@ class Game_NPC {
   patterns = [];
   routine = [];
   patrol = [];
-  pos = [-1, -1, -1, -1];
+  pos = [-1, -1, -1];
+  currentDest = null;
   dialogueName = '';
   behaviorName = '';
   actionName = '';
+  d = 0;
 
   get mapId() {
     return this.pos[0];
@@ -93,9 +88,6 @@ class Game_NPC {
   }
   get y() {
     return this.pos[2];
-  }
-  get d() {
-    return this.pos[3];
   }
 
   constructor(name) {
@@ -149,6 +141,7 @@ class Game_NPC {
       dest = list[0];
     }
     this.pos = dest.pos;
+    this.currentDest = dest;
 
     // NPC登场
     if (this.mapId === $gameMap.mapId) {
@@ -180,7 +173,7 @@ class Game_NPC {
         list === this.patrol;
       }
       if (!list.length) {
-        this.setDirection(dest.d);
+        this.setDirection(this.d);
         this.pos = dest.pos;
         return;
       }
@@ -200,6 +193,7 @@ class Game_NPC {
 
     // 记录NPC位置
     this.pos = this.event.pos;
+    this.currentDest = dest;
   }
 
   // 增加 NPC 行为模式
@@ -216,13 +210,15 @@ class Game_NPC {
       actionName,
       routine,
       patrol,
+      d,
     } = newPattern;
     if (this.behaviorName !== behaviorName) {
       // 计算到线路起始点的路径
       const dest = this.routineIsEmpty() ? patrol[0] : routine[0];
-      const initRoutine = $gameMapGraph.findRoutine(this.pos, dest);
+      const initRoutine = $gameMapGraph.findRoutine(this.currentDest, dest);
       this.routine = initRoutine.concat(routine);
       this.patrol = patrol.slice();
+      this.d = d;
     }
     this.dialogueName = dialogueName;
     this.actionName = actionName;
