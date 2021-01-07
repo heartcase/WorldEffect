@@ -48,16 +48,18 @@ class MapGraph {
     while (openList.length) {
       const head = openList.pop();
       closedList.push(head);
-      this.edges[head.pos]
+      const foundEnd = this.edges[head.pos]
         .filter((node) => !closedList.includes(node))
         .filter((node) => !openList.includes(node))
         // TODO: 最优路径
-        .forEach((node) => {
+        .some((node) => {
           backTracking[node.pos] = head;
           cost[node.pos] = this.getCost(head, node) + cost[head.pos];
-          if (node === end) break;
+          if (node === end) return true;
           openList.push(node);
+          return false;
         });
+      if (foundEnd) break;
     }
     let tail = end;
     while (tail !== head) {
