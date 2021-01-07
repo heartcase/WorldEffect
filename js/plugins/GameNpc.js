@@ -49,24 +49,44 @@ class Game_NPCEvent extends Game_Event {
     $gameMap._events[eventId] = event;
     return event;
   }
+
   data = null;
   get pos() {}
 
   constructor(mapId, eventId, data) {
     super(mapId, eventId, data);
   }
+
   initialize(mapId, eventId, data) {
     super.initialize(mapId, eventId);
     this.templateId = $dataEventMap.events.find(
-      (eventData) => eventData && eventData.meta.npcName === data.name,
+      (eventData) => eventData && eventData.meta.NPCName === data.name,
     );
   }
-  unloadFromScene() {}
+
+  unloadFromScene() {
+    const characterSprites = SceneManager._scene._spriteset._characterSprites;
+    const sprite = characterSprites.find((c) => c._character === this);
+    sprite.parent.removeChild(sprite);
+    characterSprites.remove(sprite);
+    $gameMap._events.remove(this);
+  }
+
+  loadOnScene() {
+    const eventId = $gameMap._events.length;
+    $gameMap._events[eventId] = this;
+    const spriteset = SceneManager._scene._spriteset;
+    const sprite = new Sprite_Character(this);
+    spriteset._characterSprites.push(sprite);
+    spriteset._tilemap.addChild(sprite);
+  }
+
   event() {
     return window.$dataEventMap.events[this.templateId];
   }
 }
 
+window.$gameNpc = [];
 class Game_NPC {
   name = '';
   offSceneCounter = 0;
@@ -147,6 +167,7 @@ class Game_NPC {
     if (this.mapId === $gameMap.mapId) {
       const event = Game_NPCEvent.loadNewEvent(this);
       this.eventId = event._eventId;
+      event.loadOnScene();
     }
   }
 
@@ -224,6 +245,20 @@ class Game_NPC {
     this.actionName = actionName;
     $gameMap.requestRefresh();
   }
+}
+
+{
+  const setupEvents = Game_Map.prototype.setupEvents;
+  Game_Map.prototype.setupEvents = function () {
+    setupEvents.call(this);
+    $gameNpc
+      .filter((npcData) => {
+        return npcData.mapId === this._mapId;
+      })
+      .forEach((npcData) => {
+        Game_NPCEvent.loadNewEvent(npcData);
+      });
+  };
 }
 
 window.Game_NPC = Game_NPC;

@@ -1,6 +1,11 @@
 class PathNode {
   pos = [-1, -1, -1];
-  cost = 0;
+  name = '';
+
+  constructor(name, mapId, x, y) {
+    this.name = name;
+    this.pos = [mapId, x, y];
+  }
   get mapId() {
     return this.pos[0];
   }
@@ -17,7 +22,7 @@ class MapGraph {
   edges = {};
   cost = {};
   addNode(node) {
-    this.nodes[node.pos] = node;
+    this.nodes[node.name] = node;
     this.edges[node.pos] = [];
   }
   addEdge(nodeA, nodeB, cost) {
@@ -62,6 +67,9 @@ class MapGraph {
     routine.reverse();
     return routine;
   }
-  getPathNode(nodeName) {}
+
+  getPathNode(nodeName) {
+    return this.nodes[nodeName];
+  }
 }
 window.$mapGraph = new MapGraph();
