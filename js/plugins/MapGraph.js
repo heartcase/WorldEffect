@@ -23,47 +23,56 @@ class MapGraph {
   cost = {};
   addNode(node) {
     this.nodes[node.name] = node;
-    this.edges[node.pos] = [];
+    this.edges[node.name] = [];
+    return this;
   }
-  addEdge(nodeA, nodeB, cost) {
-    this.edges[nodeA.pos].push(nodeB);
-    this.edges[nodeB.pos].push(nodeA);
-    this.cost[[...nodeA.pos, nodeB.pos]] = cost;
+  addEdge(nodeAName, nodeBName, cost) {
+    this.edges[nodeAName].push(this.getPathNode(nodeBName));
+    this.edges[nodeBName].push(this.getPathNode(nodeAName));
+    this.cost[[nodeAName, nodeBName]] = cost;
+    return this;
   }
 
   getCost(nodeA, nodeB) {
-    if (this.cost[[...nodeA.pos, nodeB.pos]])
-      return this.cost[[...nodeA.pos, nodeB.pos]];
-    return this.cost[[...nodeB.pos, nodeA.pos]];
+    if (this.cost[[nodeA.name, nodeB.name]])
+      return this.cost[[nodeA.name, nodeB.name]];
+    return this.cost[[nodeB.name, nodeA.name]];
   }
 
   findRoutine(start, end) {
-    const openList = [start];
+    const openList = [{ node: start, cost: 0 }];
     const closedList = [];
     const routine = [end];
     const backTracking = {};
     const cost = {
-      [start.pos]: 0,
+      [start.name]: 0,
     };
+    // Dijkstra 算法
     while (openList.length) {
-      const head = openList.pop();
+      openList.sort((a, b) => a.cost - b.cost);
+      const { node: head } = openList.shift();
       closedList.push(head);
-      const foundEnd = this.edges[head.pos]
-        .filter((node) => !closedList.includes(node))
-        .filter((node) => !openList.includes(node))
-        // TODO: 最优路径
-        .some((node) => {
-          backTracking[node.pos] = head;
-          cost[node.pos] = this.getCost(head, node) + cost[head.pos];
-          if (node === end) return true;
-          openList.push(node);
+      const foundEnd = this.edges[head.name].some((node) => {
+        const isVisited = closedList.includes(node) || openList.includes(node);
+        const newCost = this.getCost(head, node) + cost[head.name];
+        if (isVisited) {
+          if (cost[node.name] === undefined || cost[node.pos] < newCost) {
+            cost[node.name] = newCost;
+            backTracking[node.name] = head;
+          }
           return false;
-        });
+        } else {
+          backTracking[node.name] = head;
+          if (node === end) return true;
+          openList.push({ node, cost: newCost });
+        }
+        return false;
+      });
       if (foundEnd) break;
     }
     let tail = end;
-    while (tail !== head) {
-      tail = backTracking[tail.pos];
+    while (tail !== start) {
+      tail = backTracking[tail.name];
       routine.push(tail);
     }
     routine.reverse();

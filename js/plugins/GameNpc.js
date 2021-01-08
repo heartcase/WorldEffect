@@ -248,6 +248,30 @@ class Game_NPC {
 }
 
 {
+  // 初始化
+  const createGameObjects = DataManager.createGameObjects;
+  DataManager.createGameObjects = () => {
+    createGameObjects();
+    window.$gameNpc = new Game_NPC();
+  };
+
+  // 序列化
+  const makeSaveContents = DataManager.makeSaveContents;
+  DataManager.makeSaveContents = () => {
+    const contents = makeSaveContents();
+    contents.npcData = $gameNpc;
+    return contents;
+  };
+
+  // 反序列化
+  const extractSaveContents = DataManager.extractSaveContents;
+  DataManager.extractSaveContents = (contents) => {
+    extractSaveContents(contents);
+    $gameNpc = contents.npcData;
+  };
+}
+
+{
   const setupEvents = Game_Map.prototype.setupEvents;
   Game_Map.prototype.setupEvents = function () {
     setupEvents.call(this);
