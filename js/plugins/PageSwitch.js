@@ -8,9 +8,9 @@
   const caseHandlers = {};
 
   // 判断状态
-  const checkCase = (caseName, args) => {
+  const checkCase = (caseName, event, args) => {
     const handler = caseHandlers[caseName];
-    return handler(...args);
+    return handler(event, ...args);
   };
 
   // 从事件页首部注释中匹配正则
