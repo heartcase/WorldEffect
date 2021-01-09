@@ -1,4 +1,14 @@
+{
+  const eventMapId = 2;
+  const filename = `Map${eventMapId.padZero(3)}.json`;
+  DataManager._databaseFiles.push({ name: '$dataEventMap', src: filename });
+}
+
 class NPCPattern {
+  static createNPCPattern(behaviorName, dialogueName, d = 0) {
+    return new NPCPattern(behaviorName, dialogueName, d);
+  }
+
   conditions = [];
   behaviorName = '';
   dialogueName = '';
@@ -43,25 +53,25 @@ class NPCPattern {
 
 class Game_NPCEvent extends Game_Event {
   static loadNewEvent(data) {
-    const mapId = $gameMap._eventId;
+    const mapId = $gameMap._mapId;
     const eventId = $gameMap._events.length;
     const event = new Game_NPCEvent(mapId, eventId, data);
     $gameMap._events[eventId] = event;
+    data.eventId = eventId;
+    event.setPosition(data.x, data.y);
     return event;
   }
-
-  data = null;
-  get pos() {}
 
   constructor(mapId, eventId, data) {
     super(mapId, eventId, data);
   }
 
   initialize(mapId, eventId, data) {
-    super.initialize(mapId, eventId);
     this.templateId = $dataEventMap.events.find(
       (eventData) => eventData && eventData.meta.NPCName === data.name,
-    );
+    ).id;
+    this.data = data;
+    super.initialize(mapId, eventId);
   }
 
   unloadFromScene() {
@@ -79,6 +89,7 @@ class Game_NPCEvent extends Game_Event {
     const sprite = new Sprite_Character(this);
     spriteset._characterSprites.push(sprite);
     spriteset._tilemap.addChild(sprite);
+    this.setPosition(data.x, data.y);
   }
 
   event() {
@@ -88,6 +99,12 @@ class Game_NPCEvent extends Game_Event {
 
 window.$gameNpc = [];
 class Game_NPC {
+  static createNewNpc(name) {
+    const npcData = new Game_NPC(name);
+    $gameNpc.push(npcData);
+    return npcData;
+  }
+
   name = '';
   offSceneCounter = 0;
   patterns = [];
@@ -108,6 +125,9 @@ class Game_NPC {
   }
   get y() {
     return this.pos[2];
+  }
+  get event() {
+    return $gameMap.event(this.eventId);
   }
 
   constructor(name) {
@@ -220,11 +240,25 @@ class Game_NPC {
   // 增加 NPC 行为模式
   addPattern(pattern) {
     this.patterns.push(pattern);
+    return this;
+  }
+
+  // 设置NPC位置
+  setLocationToPathNode(nodeName) {
+    const [mapId, x, y] = $mapGraph.getPathNode(nodeName).pos;
+    const prevMapId = this.mapId;
+    this.pos = [mapId, x, y];
+    if (prevMapId !== this.mapId && this.mapId === $gameMap?._mapId) {
+      const event = Game_NPCEvent.loadNewEvent(this);
+      this.eventId = event._eventId;
+      event.loadOnScene();
+    }
+    return this;
   }
 
   // NPC行为模式更新
   patternUpdate() {
-    const newPattern = this.patterns.find((each) => each.evaluate());
+    const newPattern = this.patterns.find((each) => each.evaluate(this));
     const {
       behaviorName,
       dialogueName,
@@ -236,7 +270,9 @@ class Game_NPC {
     if (this.behaviorName !== behaviorName) {
       // 计算到线路起始点的路径
       const dest = this.routineIsEmpty() ? patrol[0] : routine[0];
-      const initRoutine = $gameMapGraph.findRoutine(this.currentDest, dest);
+      const initRoutine = this.currentDest
+        ? $mapGraph.findRoutine(this.currentDest, dest)
+        : [];
       this.routine = initRoutine.concat(routine);
       this.patrol = patrol.slice();
       this.d = d;
@@ -252,7 +288,7 @@ class Game_NPC {
   const createGameObjects = DataManager.createGameObjects;
   DataManager.createGameObjects = () => {
     createGameObjects();
-    window.$gameNpc = new Game_NPC();
+    window.$gameNpc = [];
   };
 
   // 序列化
@@ -286,4 +322,5 @@ class Game_NPC {
 }
 
 window.Game_NPC = Game_NPC;
+window.Game_NPCEvent = Game_NPCEvent;
 window.NPCPattern = NPCPattern;

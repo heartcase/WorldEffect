@@ -2,6 +2,10 @@ class PathNode {
   pos = [-1, -1, -1];
   name = '';
 
+  static createPathNode(name, mapId, x, y) {
+    $mapGraph.addNode(new PathNode(name, mapId, x, y));
+  }
+
   constructor(name, mapId, x, y) {
     this.name = name;
     this.pos = [mapId, x, y];
