@@ -53,15 +53,16 @@ class MapGraph {
       const { node: head } = openList.shift();
       closedList.push(head);
       const foundEnd = this.edges[head.name].some((node) => {
-        const isVisited = closedList.includes(node) || openList.includes(node);
+        const isVisited = closedList.includes(node) || openList.map((obj)=>obj.node).includes(node);
         const newCost = this.getCost(head, node) + cost[head.name];
         if (isVisited) {
-          if (cost[node.name] === undefined || cost[node.pos] < newCost) {
+          if (cost[node.name] === undefined || cost[node.name] > newCost) {
             cost[node.name] = newCost;
             backTracking[node.name] = head;
           }
           return false;
         } else {
+          cost[node.name] = newCost;
           backTracking[node.name] = head;
           if (node === end) return true;
           openList.push({ node, cost: newCost });
