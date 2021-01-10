@@ -91,8 +91,14 @@ class Game_NPCEvent extends Game_Event {
   }
 
   updateSelfMovement() {
-    this.setMovementSuccess(true);
-    this.data.onSceneMovementUpdate();
+    if (
+      !this._locked &&
+      this.isNearTheScreen() &&
+      this.checkStop(this.stopCountThreshold())
+    ) {
+      this.setMovementSuccess(true);
+      this.data.onSceneMovementUpdate();
+    }
   }
 
   event() {
