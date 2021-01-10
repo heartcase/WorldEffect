@@ -83,13 +83,16 @@ class Game_NPCEvent extends Game_Event {
   }
 
   loadOnScene() {
-    const eventId = $gameMap._events.length;
-    $gameMap._events[eventId] = this;
     const spriteset = SceneManager._scene._spriteset;
     const sprite = new Sprite_Character(this);
     spriteset._characterSprites.push(sprite);
     spriteset._tilemap.addChild(sprite);
-    this.setPosition(data.x, data.y);
+    this.setPosition(this.data.x, this.data.y);
+  }
+
+  updateSelfMovement() {
+    this.setMovementSuccess(true);
+    this.data.onSceneMovementUpdate();
   }
 
   event() {
@@ -145,6 +148,7 @@ class Game_NPC {
   // 场景外NPC更新
   offSceneUpdate(deltaTime) {
     let list;
+    let currentDest = this.currentDest;
     let dest;
 
     // 设置队列list的值:
@@ -157,34 +161,38 @@ class Game_NPC {
 
     // 设置dest为list的head
     dest = list[0];
+    if (!this.currentDest) {
+      this.currentDest = dest;
+    }
 
     // 更新offSceneCounter计数
     this.offSceneCounter += deltaTime;
 
     // 判断是否需要更新NPC位置
-    if (this.offSceneCounter < dest.cost) {
+    if (this.offSceneCounter < $mapGraph.getCost(this.currentDest, dest)) {
       return;
     }
 
     // 更新NPC位置
-    while (this.offSceneCounter >= dest.cost) {
-      this.offSceneCounter -= dest.cost;
+    while (this.offSceneCounter >= $mapGraph.getCost(this.currentDest, dest)) {
+      this.offSceneCounter -= $mapGraph.getCost(this.currentDest, dest);
       list.shift();
       if (list === this.patrol) {
         list.push(dest);
       } else if (this.routineIsEmpty()) {
-        list === this.patrol;
+        list = this.patrol;
       }
       if (!list.length) {
-        return;
+        break;
       }
+      currentDest = dest;
       dest = list[0];
     }
     this.pos = dest.pos;
     this.currentDest = dest;
 
     // NPC登场
-    if (this.mapId === $gameMap.mapId) {
+    if (this.mapId === $gameMap._mapId) {
       const event = Game_NPCEvent.loadNewEvent(this);
       this.eventId = event._eventId;
       event.loadOnScene();
@@ -203,7 +211,7 @@ class Game_NPC {
     }
 
     // 设置dest为list的head
-    dest = list[0];
+    let dest = list[0];
 
     // 如果已到达目标点
     if (this.x === dest.x && this.y === dest.y) {
@@ -214,7 +222,7 @@ class Game_NPC {
         list === this.patrol;
       }
       if (!list.length) {
-        this.setDirection(this.d);
+        this.event.setDirection(this.d);
         this.pos = dest.pos;
         return;
       }
@@ -222,8 +230,9 @@ class Game_NPC {
     }
 
     // NPC离场
-    if (dest.mapId !== $gameMap.mapId) {
+    if (dest.mapId !== $gameMap._mapId) {
       this.event.unloadFromScene();
+      this.pos = dest.pos;
       return;
     }
 
@@ -233,7 +242,7 @@ class Game_NPC {
     this.event.moveForward();
 
     // 记录NPC位置
-    this.pos = this.event.pos;
+    this.pos = [$gameMap._mapId, this.event.x, this.event.y];
     this.currentDest = dest;
   }
 
@@ -269,13 +278,14 @@ class Game_NPC {
     } = newPattern;
     if (this.behaviorName !== behaviorName) {
       // 计算到线路起始点的路径
-      const dest = this.routineIsEmpty() ? patrol[0] : routine[0];
+      const dest = !routine.length ? patrol[0] : routine[0];
       const initRoutine = this.currentDest
         ? $mapGraph.findRoutine(this.currentDest, dest)
         : [];
       this.routine = initRoutine.concat(routine);
       this.patrol = patrol.slice();
       this.d = d;
+      this.behaviorName = behaviorName;
     }
     this.dialogueName = dialogueName;
     this.actionName = actionName;

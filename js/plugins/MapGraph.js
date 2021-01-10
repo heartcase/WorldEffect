@@ -3,7 +3,7 @@ class PathNode {
   name = '';
 
   static createPathNode(name, mapId, x, y) {
-    $mapGraph.addNode(new PathNode(name, mapId, x, y));
+    $mapGraph.addNode(name, mapId, x, y);
   }
 
   constructor(name, mapId, x, y) {
@@ -25,9 +25,9 @@ class MapGraph {
   nodes = {};
   edges = {};
   cost = {};
-  addNode(node) {
-    this.nodes[node.name] = node;
-    this.edges[node.name] = [];
+  addNode(name, mapId, x, y) {
+    this.nodes[name] = new PathNode(name, mapId, x, y);
+    this.edges[name] = [];
     return this;
   }
   addEdge(nodeAName, nodeBName, cost) {
@@ -38,6 +38,9 @@ class MapGraph {
   }
 
   getCost(nodeA, nodeB) {
+    if (nodeA === nodeB) {
+      return 0;
+    }
     if (this.cost[[nodeA.name, nodeB.name]])
       return this.cost[[nodeA.name, nodeB.name]];
     return this.cost[[nodeB.name, nodeA.name]];
@@ -57,7 +60,9 @@ class MapGraph {
       const { node: head } = openList.shift();
       closedList.push(head);
       const foundEnd = this.edges[head.name].some((node) => {
-        const isVisited = closedList.includes(node) || openList.map((obj)=>obj.node).includes(node);
+        const isVisited =
+          closedList.includes(node) ||
+          openList.map((obj) => obj.node).includes(node);
         const newCost = this.getCost(head, node) + cost[head.name];
         if (isVisited) {
           if (cost[node.name] === undefined || cost[node.name] > newCost) {

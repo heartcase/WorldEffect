@@ -17,9 +17,13 @@
     (event, dialogueName) => dialogueName === event.data.dialogueName,
   );
 
-  TimeFly.everyHourEvents.push((deltaTime) => {
+  TimeFly.everyHourEvents.push(() => {
+    console.log(getHours());
     $gameNpc.forEach((npcData) => {
       npcData.patternUpdate();
+      if (npcData.mapId !== $gameMap._mapId) {
+        npcData.offSceneUpdate(1);
+      }
     });
     $gameMap.requestRefresh();
   });
@@ -30,10 +34,10 @@
 {
   $mapGraph
     // 声明节点
-    .addNode(new PathNode('A', 1, 1, 1))
-    .addNode(new PathNode('B', 2, 1, 1))
-    .addNode(new PathNode('C', 3, 1, 1))
-    .addNode(new PathNode('C-1', 3, 1, 2))
+    .addNode('A', 1, 1, 1)
+    .addNode('B', 2, 1, 1)
+    .addNode('C', 3, 1, 1)
+    .addNode('C-1', 3, 1, 2)
     // 声明路径
     .addEdge('A', 'B', 3)
     .addEdge('A', 'C', 5)
@@ -52,22 +56,36 @@
 
 function test() {
   $mapGraph
-    .addNode(new PathNode('村子->少年家', 1, 17, 13))
-    .addNode(new PathNode('少年家->村子', 3, 8, 12))
-    .addEdge('村子->少年家', '少年家->村子');
+    // 地图连接点
+    .addNode('村子->少年家', 1, 8, 5)
+    .addNode('少年家->村子', 3, 8, 12)
+    .addEdge('村子->少年家', '少年家->村子', 1)
+    // 地图-少年家
+    .addNode('少年家-少年-1', 3, 6, 7)
+    .addNode('少年家-少年-2', 3, 11, 7)
+    .addEdge('少年家-少年-1', '少年家-少年-2', 1)
+    .addEdge('少年家-少年-1', '少年家->村子', 1)
+    .addEdge('少年家-少年-2', '少年家->村子', 1)
+    // TODO: 自动将一个地图内的路径点设置为cost为1的全连通
+    // 地图-村子
+    .addNode('村子-少年-1', 1, 4, 8)
+    .addNode('村子-少年-2', 1, 13, 8)
+    .addEdge('村子-少年-1', '村子-少年-2', 1)
+    .addEdge('村子-少年-1', '村子->少年家', 1)
+    .addEdge('村子-少年-2', '村子->少年家', 1);
 
   Game_NPC.createNewNpc('少年')
     .addPattern(
       NPCPattern.createNPCPattern('walkInHome', 'morning')
         .addCondition('HourRange', [0, 11])
-        .addPatrolNode(PathNode.createPathNode('少年家-少年-1', 3, 6, 7))
-        .addPatrolNode(PathNode.createPathNode('少年家-少年-2', 3, 6, 7)),
+        .addPatrolNode('少年家-少年-1')
+        .addPatrolNode('少年家-少年-2'),
     )
     .addPattern(
       NPCPattern.createNPCPattern('walkInVillage', 'afternoon')
         .addCondition('HourRange', [12, 23])
-        .addPatrolNode(PathNode.createPathNode('村子-少年-1', 1, 4, 8))
-        .addPatrolNode(PathNode.createPathNode('村子-少年-2', 1, 13, 8)),
+        .addPatrolNode('村子-少年-1')
+        .addPatrolNode('村子-少年-2'),
     )
     .setLocationToPathNode('少年家-少年-1');
 }
