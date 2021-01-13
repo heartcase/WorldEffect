@@ -61,25 +61,30 @@ class NPCPattern {
 }
 
 class Game_NPCEvent extends Game_Event {
-  static loadNewEvent(data) {
+  static loadNewEvent(name) {
+    const data = $gameNpc.find((data) => data.name === name);
     const mapId = $gameMap._mapId;
     const eventId = $gameMap._events.length;
-    const event = new Game_NPCEvent(mapId, eventId, data);
+    const event = new Game_NPCEvent(mapId, eventId, name);
     $gameMap._events[eventId] = event;
     data.eventId = eventId;
     event.setPosition(data.x, data.y);
     return event;
   }
 
-  constructor(mapId, eventId, data) {
-    super(mapId, eventId, data);
+  get data() {
+    return $gameNpc.find((data) => data.name === this.name);
   }
 
-  initialize(mapId, eventId, data) {
+  constructor(mapId, eventId, name) {
+    super(mapId, eventId, name);
+  }
+
+  initialize(mapId, eventId, name) {
+    this.name = name;
     this.templateId = $dataEventMap.events.find(
-      (eventData) => eventData && eventData.meta.NPCName === data.name,
+      (eventData) => eventData && eventData.meta.NPCName === name,
     ).id;
-    this.data = data;
     super.initialize(mapId, eventId);
   }
 
@@ -208,7 +213,7 @@ class Game_NPC {
 
     // NPC登场
     if (this.mapId === $gameMap._mapId) {
-      const event = Game_NPCEvent.loadNewEvent(this);
+      const event = Game_NPCEvent.loadNewEvent(this.name);
       this.eventId = event._eventId;
       event.loadOnScene();
     }
@@ -273,7 +278,7 @@ class Game_NPC {
     const prevMapId = this.mapId;
     this.pos = [mapId, x, y];
     if (prevMapId !== this.mapId && this.mapId === $gameMap?._mapId) {
-      const event = Game_NPCEvent.loadNewEvent(this);
+      const event = Game_NPCEvent.loadNewEvent(this.name);
       this.eventId = event._eventId;
       event.loadOnScene();
     }
@@ -341,7 +346,7 @@ class Game_NPC {
         return npcData.mapId === this._mapId;
       })
       .forEach((npcData) => {
-        Game_NPCEvent.loadNewEvent(npcData);
+        Game_NPCEvent.loadNewEvent(npcData.name);
       });
   };
 }

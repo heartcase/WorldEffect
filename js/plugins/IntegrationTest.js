@@ -87,5 +87,6 @@ function test() {
         .addPatrolNode('村子-少年-1')
         .addPatrolNode('村子-少年-2'),
     )
-    .setLocationToPathNode('少年家-少年-1');
+    .setLocationToPathNode('少年家-少年-1')
+    .patternUpdate();
 }
