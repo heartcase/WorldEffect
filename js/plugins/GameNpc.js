@@ -1,5 +1,14 @@
+/*:
+ * @target MZ
+ *
+ * @param eventMapId
+ * @text 模板地图Id
+ * @type number
+ *
+ */
 {
-  const eventMapId = 2;
+  const parameters = PluginManager.parameters('GameNpc');
+  const eventMapId = +parameters['eventMapId'];
   const filename = `Map${eventMapId.padZero(3)}.json`;
   DataManager._databaseFiles.push({ name: '$dataEventMap', src: filename });
 }

@@ -42,12 +42,12 @@
     .addEdge('A', 'B', 3)
     .addEdge('A', 'C', 5)
     .addEdge('C', 'C-1', 1)
-    .addEdge('B', 'C', 4);
+    .addEdge('B', 'C', 1);
 
   // 计算路径
   const routine = $mapGraph.findRoutine(
     $mapGraph.getPathNode('A'),
-    $mapGraph.getPathNode('C'),
+    $mapGraph.getPathNode('C-1'),
   );
   console.log(routine.map((node) => node.name));
 }
