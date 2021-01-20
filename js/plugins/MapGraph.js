@@ -60,7 +60,7 @@ class MapGraph {
     // 已访问路径队列
     const closedList = [];
     // 最终
-    const routine = [end];
+    const routine = [];
     const backTracking = {};
     const cost = { [start.name]: 0 };
     // Dijkstra 算法
@@ -89,8 +89,17 @@ class MapGraph {
           backTracking[node.name] = head;
           if (isVisiting) isVisiting[cost] = newCost;
         }
-        // 如果该节点为终点, 则跳过剩余循环
-        if (node === end) return true;
+        // 如果end为节点
+        if (end instanceof PathNode) {
+          if (node === end) {
+            // 如果该节点为终点, 则跳过剩余循环
+            routine.push(node);
+            return true;
+          }
+        } else if (end instanceof Function && end(node)) {
+          routine.push(node);
+          return true;
+        }
         // 将节点加入待访问节点队列
         if (!(isVisited || isVisiting)) openList.push({ node, cost: newCost });
         return false;
